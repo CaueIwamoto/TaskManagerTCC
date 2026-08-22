@@ -8,3 +8,5 @@
 
 ### 📚 Descrição do Projeto:
 Aplicativo Android desenvolvido para auxiliar grupos de estudantes no planejamento, organização e acompanhamento de projetos de TCC. A plataforma permite gerenciar tarefas individuais e compartilhadas, acompanhar prazos e progresso, organizar atividades em calendário e receber notificações, centralizando o desenvolvimento do projeto em um único ambiente.
+
+### [🔗 Link da página Trello](https://trello.com/b/0Uqu3Hnr/product-backlog-taskmanagertcc-tcc)
