@@ -1,6 +1,7 @@
 # TaskManagerTCC - (TCC+)
 
 ### 👤 Integrantes do Grupo:
+- André Alves Toledo Silva (DEV)
 - Arthur Carvalho Rotkis (SM)
 - Cauê Iwamoto Meira (DEV)
 - Hanna de Oliveira Melo (PO)
