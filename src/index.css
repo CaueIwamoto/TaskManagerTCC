@@ -1,0 +1,66 @@
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 40 45% 94%;
+    --foreground: 36 18% 11%;
+    --card: 40 45% 97%;
+    --card-foreground: 36 18% 11%;
+    --popover: 40 45% 97%;
+    --popover-foreground: 36 18% 11%;
+    --primary: 214 33% 18%;
+    --primary-foreground: 40 45% 96%;
+    --secondary: 42 41% 89%;
+    --secondary-foreground: 36 18% 11%;
+    --muted: 42 41% 89%;
+    --muted-foreground: 44 12% 32%;
+    --accent: 34 63% 45%;
+    --accent-foreground: 40 45% 97%;
+    --destructive: 8 49% 43%;
+    --destructive-foreground: 40 45% 97%;
+    --border: 43 34% 79%;
+    --input: 43 34% 79%;
+    --ring: 34 63% 45%;
+    --radius: 0.25rem;
+
+    --paper: 40 45% 94%;
+    --paper-alt: 42 41% 89%;
+    --paper-deep: 42 37% 83%;
+    --ink: 36 18% 11%;
+    --ink-soft: 44 12% 32%;
+    --navy: 214 33% 18%;
+    --navy-soft: 214 32% 24%;
+    --navy-line: 213 27% 32%;
+    --amber: 34 63% 45%;
+    --amber-soft: 39 68% 81%;
+    --teal: 169 30% 34%;
+    --teal-soft: 156 22% 87%;
+    --brick: 8 49% 43%;
+    --brick-soft: 17 45% 88%;
+    --line: 43 34% 79%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: 'Newsreader', ui-serif, Georgia, serif;
+  }
+  .font-mono-meta {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    letter-spacing: 0.01em;
+  }
+}
