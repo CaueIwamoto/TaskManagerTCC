@@ -26,6 +26,5 @@ Aplicativo Android desenvolvido para auxiliar grupos de estudantes no planejamen
 <img width="1772" height="701" alt="image" src="https://github.com/user-attachments/assets/82ad583d-b9ff-4c98-a187-03adbd2c760d" />
 
 ## Evidência após uma semana de desenvolvimento do Projeto (12/09/2026)
-<img width="681" height="699" alt="image" src="https://github.com/user-attachments/assets/47850a9d-6a19-4d4d-8bc8-3709111f562c" />
-
+<img width="681" height="698" alt="image" src="https://github.com/user-attachments/assets/1ddb4416-86b3-4f7f-b115-6c0f344a0690" />
 
