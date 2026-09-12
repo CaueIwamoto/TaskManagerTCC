@@ -22,6 +22,10 @@ Aplicativo Android desenvolvido para auxiliar grupos de estudantes no planejamen
 - A funcionalidade não quebra outras funcionalidades
 - Não há bugs conhecidos
 
-## Evidência do Inicio da Sprint 1
+## Evidência do Inicio da Sprint 1 (5/09/2026)
 <img width="1772" height="701" alt="image" src="https://github.com/user-attachments/assets/82ad583d-b9ff-4c98-a187-03adbd2c760d" />
+
+## Evidência após uma semana de desenvolvimento do Projeto (12/09/2026)
+<img width="681" height="699" alt="image" src="https://github.com/user-attachments/assets/47850a9d-6a19-4d4d-8bc8-3709111f562c" />
+
 
