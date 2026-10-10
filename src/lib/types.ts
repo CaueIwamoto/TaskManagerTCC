@@ -43,6 +43,6 @@ export type Screen =
   | "project-choice"
   | "join-project"
   | "create-project"
-  | "add-members"
+  | "members"
   | "create-task"
   | "project-view";

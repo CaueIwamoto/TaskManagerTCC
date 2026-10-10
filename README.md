@@ -16,20 +16,20 @@ tcc-plus/
 - `src/screens/Login.tsx` — login (integrado ao backend)
 - `src/screens/Register.tsx` — cadastro (integrado ao backend)
 - `src/screens/ProjectCreate.tsx` — criação de projeto
-- `src/screens/MemberAdd.tsx` — busca/adicionar membro
+- `src/screens/MembersView.tsx` — visualizar membros do projeto
 - `src/screens/TaskCreate.tsx` — criação de tarefa
 - `src/screens/ProjectView.tsx` — visualização do projeto (dashboard + quadro por status)
 
 Projetos, membros e tarefas agora vêm do backend (o antigo `mockData.ts` foi
 removido). A navegação entre telas está em `src/App.tsx`.
 
-- **Após o cadastro:** tela "Visão geral" com dois botões — *Criar Projeto* (formulário
+- **Após o cadastro:** aviso "Cadastro realizado com sucesso!" e tela "Visão geral" com dois botões — *Criar Projeto* (formulário
   com o campo **Senha do projeto**, um GUID gerado pelo sistema, visível e não editável)
   e *Entrar no Projeto* (pede a senha; correta → Visão geral, errada → "Senha incorreta.").
 - **Criar projeto:** nome, descrição e prazo são obrigatórios; curso, orientador(a)
   e área/tema são opcionais.
-- **Membros:** a busca consulta usuários reais cadastrados (`GET /api/users/search`)
-  e "Adicionar" vincula o usuário ao projeto.
+- **Visualizar membros:** lista apenas os integrantes do projeto (não há mais busca/adição
+  de usuários; a entrada no grupo é feita pela senha do projeto).
 - **Criar tarefa:** título, descrição e prazo obrigatórios; status (padrão "A fazer"),
   responsável, categoria e prioridade opcionais. Erros aparecem por campo.
 - **Acompanhar projeto:** o quadro consulta as tarefas no backend, com estados de
@@ -56,8 +56,6 @@ API de autenticação em Express + TypeScript:
 | `POST` | `/api/projects` | Cria projeto (`name`, `description`, `deadline` obrigatórios); o criador vira membro |
 | `GET` | `/api/projects` | Lista os projetos do usuário logado |
 | `GET` | `/api/projects/:id` | Detalhe do projeto com membros |
-| `POST` | `/api/projects/:id/members` | Adiciona usuário ao projeto (`userId`, `role` opcional) |
-| `GET` | `/api/users/search?q=` | Busca usuários por nome/e-mail (exclui você mesmo) |
 | `GET` | `/api/projects/:id/tasks?status=` | Consulta tarefas do projeto (filtro opcional por status) |
 | `POST` | `/api/projects/:id/tasks` | Cria tarefa (`title`, `description`, `dueDate` obrigatórios; `status` padrão `todo`) |
 | `PATCH` | `/api/tasks/:id` | Atualiza campos da tarefa (ex.: `status`) |

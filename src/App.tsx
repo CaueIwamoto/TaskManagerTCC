@@ -4,7 +4,7 @@ import { Register } from "@/screens/Register";
 import { ProjectChoice } from "@/screens/ProjectChoice";
 import { ProjectJoin } from "@/screens/ProjectJoin";
 import { ProjectCreate } from "@/screens/ProjectCreate";
-import { MemberAdd } from "@/screens/MemberAdd";
+import { MembersView } from "@/screens/MembersView";
 import { TaskCreate } from "@/screens/TaskCreate";
 import { ProjectView } from "@/screens/ProjectView";
 import { AppShell } from "@/components/AppShell";
@@ -16,7 +16,7 @@ export default function App() {
   const [checkingSession, setCheckingSession] = useState(true);
   const [currentUser, setCurrentUser] = useState<ApiUser | null>(null);
   const [screen, setScreen] = useState<Screen>("login");
-  const [onboarding, setOnboarding] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
   const [project, setProject] = useState<ProjectInfo | null>(null);
 
   // Depois de autenticar, busca os projetos da pessoa. Se ela já participa de
@@ -27,7 +27,6 @@ export default function App() {
       const { projects } = await api.listProjects();
       if (projects.length > 0) {
         setProject(projects[0]);
-        setOnboarding(false);
         setScreen("project-view");
         return;
       }
@@ -35,7 +34,6 @@ export default function App() {
       // Se a consulta falhar, cai na escolha criar/entrar.
     }
     setProject(null);
-    setOnboarding(false);
     setScreen("project-choice");
   };
 
@@ -65,19 +63,17 @@ export default function App() {
   const handleRegister = (user: ApiUser) => {
     setCurrentUser(user);
     setProject(null);
-    setOnboarding(false);
+    setNotice("Cadastro realizado com sucesso! Agora crie um projeto ou entre em um já existente.");
     setScreen("project-choice");
   };
 
   const handleCreateProject = (p: ProjectInfo) => {
     setProject(p);
-    setOnboarding(true);
-    setScreen("add-members");
+    setScreen("project-view");
   };
 
   const handleJoinProject = (p: ProjectInfo) => {
     setProject(p);
-    setOnboarding(false);
     setScreen("project-view");
   };
 
@@ -89,7 +85,7 @@ export default function App() {
     }
     setCurrentUser(null);
     setProject(null);
-    setOnboarding(false);
+    setNotice(null);
     setScreen("login");
   };
 
@@ -137,8 +133,16 @@ export default function App() {
         ) : (
           <ProjectChoice
             userName={currentUser?.name ?? ""}
-            onCreate={() => goTo("create-project")}
-            onJoin={() => goTo("join-project")}
+            notice={notice}
+            onDismissNotice={() => setNotice(null)}
+            onCreate={() => {
+              setNotice(null);
+              goTo("create-project");
+            }}
+            onJoin={() => {
+              setNotice(null);
+              goTo("join-project");
+            }}
           />
         )}
       </AppShell>
@@ -147,18 +151,8 @@ export default function App() {
 
   const internalScreen = () => {
     switch (screen) {
-      case "add-members":
-        return (
-          <MemberAdd
-            project={project}
-            onProjectChange={setProject}
-            onContinue={() => {
-              setOnboarding(false);
-              setScreen("project-view");
-            }}
-            isOnboarding={onboarding}
-          />
-        );
+      case "members":
+        return <MembersView project={project} />;
       case "create-task":
         return (
           <TaskCreate
@@ -172,7 +166,7 @@ export default function App() {
         return (
           <ProjectView
             project={project}
-            onAddMembers={() => goTo("add-members")}
+            onViewMembers={() => goTo("members")}
             onCreateTask={() => goTo("create-task")}
           />
         );

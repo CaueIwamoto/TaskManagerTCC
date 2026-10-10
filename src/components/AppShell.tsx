@@ -28,7 +28,7 @@ function getInitials(name: string) {
 
 const navItems: { screen: Screen; label: string; icon: typeof LayoutDashboard }[] = [
   { screen: "project-view", label: "Visão geral", icon: LayoutDashboard },
-  { screen: "add-members", label: "Membros", icon: Users },
+  { screen: "members", label: "Membros", icon: Users },
   { screen: "create-task", label: "Nova tarefa", icon: ListPlus },
 ];
 

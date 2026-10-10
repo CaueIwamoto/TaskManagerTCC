@@ -5,7 +5,6 @@ import express from "express";
 import { authRouter } from "./routes/auth.js";
 import { projectsRouter } from "./routes/projects.js";
 import { tasksRouter } from "./routes/tasks.js";
-import { usersRouter } from "./routes/users.js";
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 4000);
@@ -25,7 +24,6 @@ app.get("/api/health", (_req, res) => {
 });
 
 app.use("/api/auth", authRouter);
-app.use("/api/users", usersRouter);
 app.use("/api/projects", projectsRouter);
 app.use("/api/tasks", tasksRouter);
 

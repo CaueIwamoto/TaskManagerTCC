@@ -3,7 +3,7 @@ import { AuthShell } from "@/components/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowRight, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Loader2, AlertCircle } from "lucide-react";
 import { ApiError, api, type ApiUser } from "@/lib/api";
 
 interface RegisterProps {
@@ -19,7 +19,6 @@ export function Register({ onRegister, onGoToLogin }: RegisterProps) {
     password: "",
   });
   const [error, setError] = useState<string | null>(null);
-  const [registeredUser, setRegisteredUser] = useState<ApiUser | null>(null);
   const [loading, setLoading] = useState(false);
 
   const update = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -31,7 +30,7 @@ export function Register({ onRegister, onGoToLogin }: RegisterProps) {
     setLoading(true);
     try {
       const { user } = await api.register(form);
-      setRegisteredUser(user);
+      onRegister(user);
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : "Não foi possível conectar ao servidor."
@@ -39,34 +38,6 @@ export function Register({ onRegister, onGoToLogin }: RegisterProps) {
     } finally {
       setLoading(false);
     }
-  }
-
-  if (registeredUser) {
-    return (
-      <AuthShell
-        eyebrow="Tudo certo"
-        title="Cadastro realizado"
-        subtitle="Sua conta está pronta para uso."
-      >
-        <div className="space-y-5">
-          <div
-            role="status"
-            className="flex items-start gap-2 rounded-sm border border-emerald-700/20 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-800"
-          >
-            <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" strokeWidth={1.75} />
-            <span>Cadastro realizado com sucesso!</span>
-          </div>
-          <Button
-            type="button"
-            onClick={() => onRegister(registeredUser)}
-            className="w-full bg-[hsl(var(--navy))] hover:bg-[hsl(var(--navy-soft))] text-[hsl(var(--paper))] h-10.5"
-          >
-            Continuar
-            <ArrowRight className="h-4 w-4 ml-1.5" />
-          </Button>
-        </div>
-      </AuthShell>
-    );
   }
 
   return (

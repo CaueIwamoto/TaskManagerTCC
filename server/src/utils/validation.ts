@@ -67,14 +67,6 @@ export const joinProjectSchema = z.object({
     .min(1, "Informe a senha do projeto"),
 });
 
-export const addMemberSchema = z.object({
-  userId: z
-    .string({ required_error: "Informe o usuário a adicionar", invalid_type_error: "Usuário inválido" })
-    .trim()
-    .min(1, "Informe o usuário a adicionar"),
-  role: z.enum(["integrante", "orientador"]).optional().default("integrante"),
-});
-
 export const taskStatusSchema = z.enum(["todo", "doing", "done"], {
   errorMap: () => ({ message: "Status inválido. Use todo, doing ou done" }),
 });

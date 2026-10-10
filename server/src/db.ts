@@ -120,18 +120,6 @@ export function toPublicUser(user: UserRecord) {
 }
 
 // ---------------------------------------------------------------------------
-// Usuários (busca para adicionar ao projeto)
-// ---------------------------------------------------------------------------
-
-export async function searchUsers(query: string, limit = 20): Promise<UserRecord[]> {
-  const q = query.trim().toLowerCase();
-  return db.data.users
-    .filter((u) => !q || u.name.toLowerCase().includes(q) || u.email.includes(q))
-    .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
-    .slice(0, limit);
-}
-
-// ---------------------------------------------------------------------------
 // Projetos
 // ---------------------------------------------------------------------------
 

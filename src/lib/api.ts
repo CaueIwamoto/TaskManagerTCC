@@ -14,7 +14,7 @@ export interface ApiUser {
   createdAt: string;
 }
 
-import type { Member, MemberRole, ProjectInfo, Task, TaskPriority, TaskStatus } from "./types";
+import type { ProjectInfo, Task, TaskPriority, TaskStatus } from "./types";
 
 export class ApiError extends Error {
   status: number;
@@ -100,17 +100,6 @@ export const api = {
       method: "POST",
       body: JSON.stringify(input),
     });
-  },
-  addMember(projectId: string, input: { userId: string; role?: MemberRole }) {
-    return request<{ project: ProjectInfo }>(`/projects/${projectId}/members`, {
-      method: "POST",
-      body: JSON.stringify(input),
-    });
-  },
-
-  // --- Usuários -----------------------------------------------------------
-  searchUsers(query: string) {
-    return request<{ users: Member[] }>(`/users/search?q=${encodeURIComponent(query)}`);
   },
 
   // --- Tarefas ------------------------------------------------------------

@@ -6,7 +6,6 @@ import {
   createTask,
   findProjectById,
   findProjectByPassword,
-  findUserById,
   findUsersByIds,
   isProjectMember,
   listProjectsForUser,
@@ -17,7 +16,6 @@ import { requireAuth } from "../middleware/auth.js";
 import { sendValidationError } from "../utils/http.js";
 import { toPublicProject, toPublicTask } from "../utils/serializers.js";
 import {
-  addMemberSchema,
   createProjectSchema,
   createTaskSchema,
   joinProjectSchema,
@@ -113,26 +111,6 @@ projectsRouter.get("/:id", async (req, res) => {
   const project = await loadAccessibleProject(req, res);
   if (!project) return;
   return res.json({ project: await presentProject(project) });
-});
-
-// POST /api/projects/:id/members — Adicionar usuário ao projeto
-projectsRouter.post("/:id/members", async (req, res) => {
-  const project = await loadAccessibleProject(req, res);
-  if (!project) return;
-
-  const parsed = addMemberSchema.safeParse(req.body);
-  if (!parsed.success) return sendValidationError(res, parsed.error);
-
-  const user = await findUserById(parsed.data.userId);
-  if (!user) {
-    return res.status(404).json({ error: "Usuário não encontrado." });
-  }
-  if (isProjectMember(project, user.id)) {
-    return res.status(409).json({ error: "Este usuário já faz parte do projeto." });
-  }
-
-  const updated = await addProjectMember(project.id, user.id, parsed.data.role);
-  return res.status(201).json({ project: await presentProject(updated!) });
 });
 
 // GET /api/projects/:projectId/tasks?status=todo|doing|done — Consultar tarefas

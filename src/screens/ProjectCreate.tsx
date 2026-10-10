@@ -131,7 +131,7 @@ export function ProjectCreate({ onCreate, onBack }: ProjectCreateProps) {
           </div>
           <div>
             <p className="font-mono-meta text-[11px] uppercase tracking-[0.14em] text-[hsl(var(--amber))]">
-              Passo 1 de 2 — Projeto
+              Novo projeto
             </p>
             <h1 className="font-display text-[28px] leading-tight text-[hsl(var(--ink))] mt-1">
               Configure o projeto do seu TCC
@@ -282,7 +282,7 @@ export function ProjectCreate({ onCreate, onBack }: ProjectCreateProps) {
 
           <div className="flex items-center justify-between pt-3">
             <p className="text-xs text-[hsl(var(--ink-soft))] font-mono-meta">
-              Próximo: adicionar integrantes ao grupo
+              Depois de criar, compartilhe a senha com o grupo
             </p>
             <Button
               type="submit"

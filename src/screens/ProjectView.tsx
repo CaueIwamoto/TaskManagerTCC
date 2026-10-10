@@ -15,7 +15,7 @@ import type { Member, ProjectInfo, Task, TaskStatus } from "@/lib/types";
 
 interface ProjectViewProps {
   project: ProjectInfo;
-  onAddMembers: () => void;
+  onViewMembers: () => void;
   onCreateTask: () => void;
 }
 
@@ -43,7 +43,7 @@ function formatDate(iso: string) {
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
 }
 
-export function ProjectView({ project, onAddMembers, onCreateTask }: ProjectViewProps) {
+export function ProjectView({ project, onViewMembers, onCreateTask }: ProjectViewProps) {
   const members = project.members;
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -128,7 +128,7 @@ export function ProjectView({ project, onAddMembers, onCreateTask }: ProjectView
           <div className="flex shrink-0 items-center gap-2.5">
             <Button
               variant="outline"
-              onClick={onAddMembers}
+              onClick={onViewMembers}
               className="border-[hsl(var(--line))] text-[hsl(var(--ink))] hover:bg-[hsl(var(--paper-alt))]"
             >
               <Users className="h-4 w-4 mr-1.5" strokeWidth={1.75} />
