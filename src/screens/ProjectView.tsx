@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -8,17 +8,22 @@ import {
   Plus,
   ArrowRight,
   Circle,
+  RefreshCw,
 } from "lucide-react";
+import { api, ApiError } from "@/lib/api";
 import type { Member, ProjectInfo, Task, TaskStatus } from "@/lib/types";
 
 interface ProjectViewProps {
   project: ProjectInfo;
-  members: Member[];
-  tasks: Task[];
-  onAdvanceTask: (taskId: string) => void;
   onAddMembers: () => void;
   onCreateTask: () => void;
 }
+
+const nextStatus: Record<TaskStatus, TaskStatus> = {
+  todo: "doing",
+  doing: "done",
+  done: "done",
+};
 
 const columns: { status: TaskStatus; label: string }[] = [
   { status: "todo", label: "A fazer" },
@@ -38,14 +43,51 @@ function formatDate(iso: string) {
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
 }
 
-export function ProjectView({
-  project,
-  members,
-  tasks,
-  onAdvanceTask,
-  onAddMembers,
-  onCreateTask,
-}: ProjectViewProps) {
+export function ProjectView({ project, onAddMembers, onCreateTask }: ProjectViewProps) {
+  const members = project.members;
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [actionError, setActionError] = useState("");
+
+  // Consulta as tarefas do projeto no backend. Roda ao abrir a tela (que é
+  // remontada ao voltar da criação de tarefa) e no botão "Tentar novamente".
+  const loadTasks = useCallback(async () => {
+    setLoading(true);
+    setLoadError("");
+    try {
+      const { tasks } = await api.listTasks(project.id);
+      setTasks(tasks);
+    } catch (err) {
+      setLoadError(
+        err instanceof ApiError ? err.message : "Não foi possível carregar as tarefas."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [project.id]);
+
+  useEffect(() => {
+    loadTasks();
+  }, [loadTasks]);
+
+  // Move a tarefa de coluna: atualiza a tela na hora e desfaz se o servidor recusar.
+  const handleAdvanceTask = async (task: Task) => {
+    const target = nextStatus[task.status];
+    if (target === task.status) return;
+    setActionError("");
+    setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, status: target } : t)));
+    try {
+      const { task: saved } = await api.updateTask(task.id, { status: target });
+      setTasks((prev) => prev.map((t) => (t.id === saved.id ? saved : t)));
+    } catch (err) {
+      setTasks((prev) => prev.map((t) => (t.id === task.id ? task : t)));
+      setActionError(
+        err instanceof ApiError ? err.message : "Não foi possível atualizar a tarefa."
+      );
+    }
+  };
+
   const doneCount = tasks.filter((t) => t.status === "done").length;
   const progress = tasks.length ? Math.round((doneCount / tasks.length) * 100) : 0;
 
@@ -106,9 +148,27 @@ export function ProjectView({
         <div className="mt-6 flex items-center gap-4">
           <Progress value={progress} className="h-1.5 flex-1 bg-[hsl(var(--paper-deep))]" />
           <span className="font-mono-meta text-xs text-[hsl(var(--ink-soft))] shrink-0">
-            {doneCount}/{tasks.length} tarefas concluídas · {progress}%
+            {loading ? "Carregando tarefas..." : `${doneCount}/${tasks.length} tarefas concluídas · ${progress}%`}
           </span>
         </div>
+
+        {(loadError || actionError) && (
+          <div
+            role="alert"
+            className="mt-5 flex items-center justify-between gap-4 rounded-sm border border-[hsl(var(--brick))] bg-[hsl(var(--brick-soft))] px-4 py-3 text-sm text-[hsl(var(--brick))]"
+          >
+            <span>{loadError || actionError}</span>
+            {loadError && (
+              <button
+                onClick={loadTasks}
+                className="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium underline-offset-2 hover:underline"
+              >
+                <RefreshCw className="h-3.5 w-3.5" strokeWidth={1.75} />
+                Tentar novamente
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Quadro de tarefas */}
         <div className="mt-9 grid grid-cols-1 gap-6 sm:grid-cols-3">
@@ -126,7 +186,7 @@ export function ProjectView({
                 <ul className="mt-3.5 space-y-2.5">
                   {colTasks.length === 0 && (
                     <li className="rounded-sm border border-dashed border-[hsl(var(--line))] px-3 py-5 text-center text-xs text-[hsl(var(--ink-soft))]">
-                      Nenhuma tarefa aqui
+                      {loading ? "Carregando..." : "Nenhuma tarefa aqui"}
                     </li>
                   )}
                   {colTasks.map((task) => {
@@ -181,7 +241,7 @@ export function ProjectView({
 
                         {col.status !== "done" && (
                           <button
-                            onClick={() => onAdvanceTask(task.id)}
+                            onClick={() => handleAdvanceTask(task)}
                             className="mt-2.5 inline-flex items-center gap-1 text-[11px] text-[hsl(var(--amber))] opacity-0 transition-opacity hover:underline group-hover:opacity-100"
                           >
                             Mover para {col.status === "todo" ? "em andamento" : "concluído"}

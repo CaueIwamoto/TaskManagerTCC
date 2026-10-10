@@ -12,11 +12,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ListPlus } from "lucide-react";
-import type { Member, Task, TaskPriority } from "@/lib/types";
+import { FieldError, invalidClass } from "@/components/FieldError";
+import { api, ApiError } from "@/lib/api";
+import { validateTaskForm, type FieldErrors } from "@/lib/validation";
+import type { Member, TaskPriority, TaskStatus } from "@/lib/types";
 
 interface TaskCreateProps {
+  projectId: string;
   members: Member[];
-  onCreate: (task: Omit<Task, "id" | "status">) => void;
+  onCreated: () => void;
 }
 
 const priorities: { value: TaskPriority; label: string; dot: string }[] = [
@@ -25,13 +29,68 @@ const priorities: { value: TaskPriority; label: string; dot: string }[] = [
   { value: "alta", label: "Alta", dot: "bg-[hsl(var(--brick))]" },
 ];
 
-export function TaskCreate({ members, onCreate }: TaskCreateProps) {
+const statuses: { value: TaskStatus; label: string }[] = [
+  { value: "todo", label: "A fazer" },
+  { value: "doing", label: "Em andamento" },
+  { value: "done", label: "Concluído" },
+];
+
+const labelClass =
+  "text-[hsl(var(--ink-soft))] text-xs uppercase tracking-wide font-mono-meta";
+const fieldClass =
+  "border-[hsl(var(--line))] bg-[hsl(var(--card))] focus-visible:ring-[hsl(var(--amber))]";
+
+export function TaskCreate({ projectId, members, onCreated }: TaskCreateProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [status, setStatus] = useState<TaskStatus>("todo");
   const [assigneeId, setAssigneeId] = useState<string>("unassigned");
   const [dueDate, setDueDate] = useState("");
   const [priority, setPriority] = useState<TaskPriority>("media");
   const [tag, setTag] = useState("");
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const [formError, setFormError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const clearError = (field: string) =>
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const { [field]: _removed, ...rest } = prev;
+      return rest;
+    });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError("");
+
+    // Campos obrigatórios: título, descrição e prazo (o servidor valida de novo).
+    const clientErrors = validateTaskForm({ title, description, dueDate });
+    setErrors(clientErrors);
+    if (Object.keys(clientErrors).length > 0) return;
+
+    setSubmitting(true);
+    try {
+      await api.createTask(projectId, {
+        title: title.trim(),
+        description: description.trim(),
+        dueDate,
+        status,
+        assigneeId: assigneeId === "unassigned" ? null : assigneeId,
+        priority,
+        tag: tag.trim() || "Geral",
+      });
+      onCreated();
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setErrors(err.fields);
+        setFormError(Object.keys(err.fields).length === 0 ? err.message : "");
+      } else {
+        setFormError("Não foi possível conectar ao servidor. Tente novamente.");
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="px-8 py-10 lg:px-12">
@@ -52,67 +111,59 @@ export function TaskCreate({ members, onCreate }: TaskCreateProps) {
 
         <form
           className="mt-8 space-y-5 border-t border-[hsl(var(--line))] pt-7"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!title || !dueDate) return;
-            onCreate({
-              title,
-              description,
-              assigneeId: assigneeId === "unassigned" ? null : assigneeId,
-              dueDate,
-              priority,
-              tag: tag || "Geral",
-            });
-            setTitle("");
-            setDescription("");
-            setAssigneeId("unassigned");
-            setDueDate("");
-            setPriority("media");
-            setTag("");
-          }}
+          noValidate
+          onSubmit={handleSubmit}
         >
           <div className="space-y-1.5">
-            <Label htmlFor="title" className="text-[hsl(var(--ink-soft))] text-xs uppercase tracking-wide font-mono-meta">
-              Título da tarefa
+            <Label htmlFor="title" className={labelClass}>
+              Título da tarefa *
             </Label>
             <Input
               id="title"
-              required
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                clearError("title");
+              }}
               placeholder="Ex.: Revisar capítulo de metodologia"
-              className="border-[hsl(var(--line))] bg-[hsl(var(--card))] focus-visible:ring-[hsl(var(--amber))]"
+              aria-invalid={!!errors.title}
+              aria-describedby={errors.title ? "title-error" : undefined}
+              className={`${fieldClass} ${errors.title ? invalidClass : ""}`}
             />
+            <FieldError id="title-error" message={errors.title} />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="description" className="text-[hsl(var(--ink-soft))] text-xs uppercase tracking-wide font-mono-meta">
-              Descrição
+            <Label htmlFor="description" className={labelClass}>
+              Descrição *
             </Label>
             <Textarea
               id="description"
               rows={3}
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                clearError("description");
+              }}
               placeholder="Detalhes do que precisa ser feito"
-              className="border-[hsl(var(--line))] bg-[hsl(var(--card))] focus-visible:ring-[hsl(var(--amber))] resize-none"
+              aria-invalid={!!errors.description}
+              aria-describedby={errors.description ? "description-error" : undefined}
+              className={`${fieldClass} resize-none ${errors.description ? invalidClass : ""}`}
             />
+            <FieldError id="description-error" message={errors.description} />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-[hsl(var(--ink-soft))] text-xs uppercase tracking-wide font-mono-meta">
-                Responsável
-              </Label>
-              <Select value={assigneeId} onValueChange={setAssigneeId}>
+              <Label className={labelClass}>Status</Label>
+              <Select value={status} onValueChange={(v) => setStatus(v as TaskStatus)}>
                 <SelectTrigger className="border-[hsl(var(--line))] bg-[hsl(var(--card))] focus:ring-[hsl(var(--amber))]">
                   <SelectValue placeholder="Selecionar" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="unassigned">Sem responsável</SelectItem>
-                  {members.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>
-                      {m.name}
+                  {statuses.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -120,22 +171,45 @@ export function TaskCreate({ members, onCreate }: TaskCreateProps) {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="dueDate" className="text-[hsl(var(--ink-soft))] text-xs uppercase tracking-wide font-mono-meta">
-                Prazo
+              <Label htmlFor="dueDate" className={labelClass}>
+                Prazo *
               </Label>
               <Input
                 id="dueDate"
                 type="date"
-                required
                 value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                className="border-[hsl(var(--line))] bg-[hsl(var(--card))] focus-visible:ring-[hsl(var(--amber))]"
+                onChange={(e) => {
+                  setDueDate(e.target.value);
+                  clearError("dueDate");
+                }}
+                aria-invalid={!!errors.dueDate}
+                aria-describedby={errors.dueDate ? "dueDate-error" : undefined}
+                className={`${fieldClass} ${errors.dueDate ? invalidClass : ""}`}
               />
+              <FieldError id="dueDate-error" message={errors.dueDate} />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="tag" className="text-[hsl(var(--ink-soft))] text-xs uppercase tracking-wide font-mono-meta">
+            <Label className={labelClass}>Responsável</Label>
+            <Select value={assigneeId} onValueChange={setAssigneeId}>
+              <SelectTrigger className="border-[hsl(var(--line))] bg-[hsl(var(--card))] focus:ring-[hsl(var(--amber))]">
+                <SelectValue placeholder="Selecionar" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="unassigned">Sem responsável</SelectItem>
+                {members.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FieldError id="assigneeId-error" message={errors.assigneeId} />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="tag" className={labelClass}>
               Categoria
             </Label>
             <Input
@@ -143,14 +217,12 @@ export function TaskCreate({ members, onCreate }: TaskCreateProps) {
               value={tag}
               onChange={(e) => setTag(e.target.value)}
               placeholder="Ex.: Backend, Documentação, Design..."
-              className="border-[hsl(var(--line))] bg-[hsl(var(--card))] focus-visible:ring-[hsl(var(--amber))]"
+              className={fieldClass}
             />
           </div>
 
           <div className="space-y-2">
-            <Label className="text-[hsl(var(--ink-soft))] text-xs uppercase tracking-wide font-mono-meta">
-              Prioridade
-            </Label>
+            <Label className={labelClass}>Prioridade</Label>
             <RadioGroup
               value={priority}
               onValueChange={(v) => setPriority(v as TaskPriority)}
@@ -170,12 +242,19 @@ export function TaskCreate({ members, onCreate }: TaskCreateProps) {
             </RadioGroup>
           </div>
 
+          {formError && (
+            <p role="alert" className="text-sm text-[hsl(var(--brick))]">
+              {formError}
+            </p>
+          )}
+
           <div className="flex justify-end pt-3">
             <Button
               type="submit"
+              disabled={submitting}
               className="bg-[hsl(var(--navy))] hover:bg-[hsl(var(--navy-soft))] text-[hsl(var(--paper))]"
             >
-              Criar tarefa
+              {submitting ? "Criando..." : "Criar tarefa"}
             </Button>
           </div>
         </form>

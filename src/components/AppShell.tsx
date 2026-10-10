@@ -10,10 +10,20 @@ import type { Screen } from "@/lib/types";
 
 interface AppShellProps {
   active: Screen;
-  projectName: string;
+  /** null enquanto a pessoa ainda não criou/entrou em um projeto. */
+  projectName: string | null;
+  userName: string;
+  userSubtitle: string;
   onNavigate: (screen: Screen) => void;
   onLogout: () => void;
   children: ReactNode;
+}
+
+function getInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
 const navItems: { screen: Screen; label: string; icon: typeof LayoutDashboard }[] = [
@@ -22,7 +32,15 @@ const navItems: { screen: Screen; label: string; icon: typeof LayoutDashboard }[
   { screen: "create-task", label: "Nova tarefa", icon: ListPlus },
 ];
 
-export function AppShell({ active, projectName, onNavigate, onLogout, children }: AppShellProps) {
+export function AppShell({
+  active,
+  projectName,
+  userName,
+  userSubtitle,
+  onNavigate,
+  onLogout,
+  children,
+}: AppShellProps) {
   return (
     <div className="min-h-screen w-full bg-[hsl(var(--paper))] lg:flex">
       <aside className="flex lg:w-[248px] shrink-0 flex-col justify-between bg-[hsl(var(--navy))] px-5 py-6">
@@ -39,10 +57,11 @@ export function AppShell({ active, projectName, onNavigate, onLogout, children }
               Projeto atual
             </p>
             <p className="text-sm text-[hsl(var(--paper)/0.92)] mt-1 leading-snug line-clamp-2">
-              {projectName}
+              {projectName ?? "Nenhum projeto ainda"}
             </p>
           </div>
 
+          {projectName !== null && (
           <nav className="mt-6 space-y-0.5">
             {navItems.map(({ screen, label, icon: Icon }) => {
               const isActive = active === screen;
@@ -65,17 +84,18 @@ export function AppShell({ active, projectName, onNavigate, onLogout, children }
               );
             })}
           </nav>
+          )}
         </div>
 
         <div className="space-y-3">
           <div className="h-px bg-[hsl(var(--paper)/0.1)]" />
           <div className="flex items-center gap-2.5 px-1.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[hsl(var(--amber-soft))] text-[11px] font-medium text-[hsl(var(--navy))]">
-              AR
+              {getInitials(userName)}
             </div>
             <div className="min-w-0">
-              <p className="truncate text-xs text-[hsl(var(--paper)/0.9)]">Arthur Rotkis</p>
-              <p className="truncate text-[11px] text-[hsl(var(--paper)/0.45)]">7º semestre</p>
+              <p className="truncate text-xs text-[hsl(var(--paper)/0.9)]">{userName}</p>
+              <p className="truncate text-[11px] text-[hsl(var(--paper)/0.45)]">{userSubtitle}</p>
             </div>
             <button
               onClick={onLogout}

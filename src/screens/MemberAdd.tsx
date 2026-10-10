@@ -1,29 +1,66 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, UserPlus, Check, GraduationCap } from "lucide-react";
-import type { Member } from "@/lib/types";
-import { searchableStudents } from "@/lib/mockData";
+import { api, ApiError } from "@/lib/api";
+import type { Member, ProjectInfo } from "@/lib/types";
 
 interface MemberAddProps {
-  members: Member[];
-  onAddMember: (member: Member) => void;
+  project: ProjectInfo;
+  onProjectChange: (project: ProjectInfo) => void;
   onContinue: () => void;
   isOnboarding: boolean;
 }
 
-export function MemberAdd({ members, onAddMember, onContinue, isOnboarding }: MemberAddProps) {
+export function MemberAdd({ project, onProjectChange, onContinue, isOnboarding }: MemberAddProps) {
+  const members = project.members;
   const [query, setQuery] = useState("");
+  const [results, setResults] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [addingId, setAddingId] = useState<string | null>(null);
 
   const memberIds = useMemo(() => new Set(members.map((m) => m.id)), [members]);
 
-  const results = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return searchableStudents;
-    return searchableStudents.filter(
-      (s) => s.name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q)
-    );
+  // Busca usuários cadastrados no backend (com debounce para não disparar
+  // uma requisição a cada tecla).
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    const timer = setTimeout(() => {
+      api
+        .searchUsers(query.trim())
+        .then(({ users }) => {
+          if (cancelled) return;
+          setResults(users);
+          setError("");
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          setError(err instanceof ApiError ? err.message : "Não foi possível buscar usuários.");
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [query]);
+
+  const handleAdd = async (user: Member) => {
+    setAddingId(user.id);
+    setError("");
+    try {
+      const { project: updated } = await api.addMember(project.id, { userId: user.id });
+      onProjectChange(updated);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Não foi possível adicionar o usuário.");
+    } finally {
+      setAddingId(null);
+    }
+  };
 
   return (
     <div className="px-8 py-10 lg:px-12">
@@ -53,10 +90,23 @@ export function MemberAdd({ members, onAddMember, onContinue, isOnboarding }: Me
               />
             </div>
 
+            {error && (
+              <p role="alert" className="mt-3 text-sm text-[hsl(var(--brick))]">
+                {error}
+              </p>
+            )}
+
             <ul className="mt-4 divide-y divide-[hsl(var(--line))] border-y border-[hsl(var(--line))]">
-              {results.length === 0 && (
+              {loading && results.length === 0 && (
                 <li className="py-8 text-center text-sm text-[hsl(var(--ink-soft))]">
-                  Nenhum estudante encontrado para "{query}".
+                  Buscando...
+                </li>
+              )}
+              {!loading && results.length === 0 && !error && (
+                <li className="py-8 text-center text-sm text-[hsl(var(--ink-soft))]">
+                  {query.trim()
+                    ? `Nenhum usuário encontrado para "${query.trim()}".`
+                    : "Nenhum outro usuário cadastrado ainda."}
                 </li>
               )}
               {results.map((student) => {
@@ -74,14 +124,14 @@ export function MemberAdd({ members, onAddMember, onContinue, isOnboarding }: Me
                     </div>
                     <span className="hidden shrink-0 items-center gap-1 text-xs text-[hsl(var(--ink-soft))] sm:flex">
                       <GraduationCap className="h-3.5 w-3.5" strokeWidth={1.75} />
-                      {student.course}
+                      {student.institution}
                     </span>
                     <Button
                       type="button"
                       size="sm"
                       variant={added ? "secondary" : "outline"}
-                      disabled={added}
-                      onClick={() => onAddMember(student)}
+                      disabled={added || addingId === student.id}
+                      onClick={() => handleAdd(student)}
                       className={
                         added
                           ? "border-none bg-[hsl(var(--teal-soft))] text-[hsl(var(--teal))] hover:bg-[hsl(var(--teal-soft))]"
@@ -96,7 +146,7 @@ export function MemberAdd({ members, onAddMember, onContinue, isOnboarding }: Me
                       ) : (
                         <>
                           <UserPlus className="h-3.5 w-3.5 mr-1" strokeWidth={1.75} />
-                          Adicionar
+                          {addingId === student.id ? "Adicionando..." : "Adicionar"}
                         </>
                       )}
                     </Button>

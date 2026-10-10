@@ -1,68 +1,111 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Login } from "@/screens/Login";
 import { Register } from "@/screens/Register";
+import { ProjectChoice } from "@/screens/ProjectChoice";
+import { ProjectJoin } from "@/screens/ProjectJoin";
 import { ProjectCreate } from "@/screens/ProjectCreate";
 import { MemberAdd } from "@/screens/MemberAdd";
 import { TaskCreate } from "@/screens/TaskCreate";
 import { ProjectView } from "@/screens/ProjectView";
 import { AppShell } from "@/components/AppShell";
-import { initialMembers, initialProject, initialTasks } from "@/lib/mockData";
-import type { Member, ProjectInfo, Screen, Task } from "@/lib/types";
+import { api, type ApiUser } from "@/lib/api";
+import type { ProjectInfo, Screen } from "@/lib/types";
+import { BookOpenCheck } from "lucide-react";
 
 export default function App() {
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [currentUser, setCurrentUser] = useState<ApiUser | null>(null);
   const [screen, setScreen] = useState<Screen>("login");
   const [onboarding, setOnboarding] = useState(false);
+  const [project, setProject] = useState<ProjectInfo | null>(null);
 
-  const [project, setProject] = useState<ProjectInfo>(initialProject);
-  const [members, setMembers] = useState<Member[]>(initialMembers.slice(0, 1));
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  // Depois de autenticar, busca os projetos da pessoa. Se ela já participa de
+  // algum, abre o mais recente; senão, mostra a escolha criar/entrar.
+  const enterApp = async (user: ApiUser) => {
+    setCurrentUser(user);
+    try {
+      const { projects } = await api.listProjects();
+      if (projects.length > 0) {
+        setProject(projects[0]);
+        setOnboarding(false);
+        setScreen("project-view");
+        return;
+      }
+    } catch {
+      // Se a consulta falhar, cai na escolha criar/entrar.
+    }
+    setProject(null);
+    setOnboarding(false);
+    setScreen("project-choice");
+  };
+
+  // Ao carregar o app, verifica se já existe uma sessão válida (cookie
+  // httpOnly emitido pelo backend) antes de decidir a tela inicial.
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .me()
+      .then(async ({ user }) => {
+        if (cancelled) return;
+        await enterApp(user);
+      })
+      .catch(() => {
+        // Sem sessão ativa — permanece na tela de login.
+      })
+      .finally(() => {
+        if (!cancelled) setCheckingSession(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const goTo = (s: Screen) => setScreen(s);
 
-  const handleLogin = () => {
-    setMembers(initialMembers);
-    setScreen("project-view");
-  };
-
-  const handleRegister = () => {
-    setOnboarding(true);
-    setMembers([initialMembers[0]]);
-    setScreen("create-project");
+  const handleRegister = (user: ApiUser) => {
+    setCurrentUser(user);
+    setProject(null);
+    setOnboarding(false);
+    setScreen("project-choice");
   };
 
   const handleCreateProject = (p: ProjectInfo) => {
     setProject(p);
-    setTasks([]);
+    setOnboarding(true);
     setScreen("add-members");
   };
 
-  const handleAddMember = (member: Member) => {
-    setMembers((prev) => (prev.some((m) => m.id === member.id) ? prev : [...prev, member]));
-  };
-
-  const handleCreateTask = (task: Omit<Task, "id" | "status">) => {
-    const newTask: Task = { ...task, id: `t${Date.now()}`, status: "todo" };
-    setTasks((prev) => [newTask, ...prev]);
+  const handleJoinProject = (p: ProjectInfo) => {
+    setProject(p);
+    setOnboarding(false);
     setScreen("project-view");
   };
 
-  const handleAdvanceTask = (taskId: string) => {
-    setTasks((prev) =>
-      prev.map((t) => {
-        if (t.id !== taskId) return t;
-        const next = t.status === "todo" ? "doing" : t.status === "doing" ? "done" : "done";
-        return { ...t, status: next };
-      })
-    );
-  };
-
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await api.logout();
+    } catch {
+      // Mesmo que a chamada falhe, derruba a sessão localmente.
+    }
+    setCurrentUser(null);
+    setProject(null);
     setOnboarding(false);
     setScreen("login");
   };
 
+  if (checkingSession) {
+    return (
+      <div className="flex min-h-screen w-full items-center justify-center bg-[hsl(var(--paper))]">
+        <BookOpenCheck
+          className="h-6 w-6 animate-pulse text-[hsl(var(--amber))]"
+          strokeWidth={1.75}
+        />
+      </div>
+    );
+  }
+
   if (screen === "login") {
-    return <Login onLogin={handleLogin} onGoToRegister={() => goTo("register")} />;
+    return <Login onLogin={enterApp} onGoToRegister={() => goTo("register")} />;
   }
 
   if (screen === "register") {
@@ -70,7 +113,36 @@ export default function App() {
   }
 
   if (screen === "create-project") {
-    return <ProjectCreate onCreate={handleCreateProject} />;
+    return (
+      <ProjectCreate
+        onCreate={handleCreateProject}
+        onBack={project ? undefined : () => goTo("project-choice")}
+      />
+    );
+  }
+
+  // Sem projeto: escolha entre criar ou entrar (mesmo layout da visão geral).
+  if (!project) {
+    return (
+      <AppShell
+        active={screen}
+        projectName={null}
+        userName={currentUser?.name ?? "Convidado"}
+        userSubtitle={currentUser?.institution ?? ""}
+        onNavigate={goTo}
+        onLogout={handleLogout}
+      >
+        {screen === "join-project" ? (
+          <ProjectJoin onJoined={handleJoinProject} onBack={() => goTo("project-choice")} />
+        ) : (
+          <ProjectChoice
+            userName={currentUser?.name ?? ""}
+            onCreate={() => goTo("create-project")}
+            onJoin={() => goTo("join-project")}
+          />
+        )}
+      </AppShell>
+    );
   }
 
   const internalScreen = () => {
@@ -78,8 +150,8 @@ export default function App() {
       case "add-members":
         return (
           <MemberAdd
-            members={members}
-            onAddMember={handleAddMember}
+            project={project}
+            onProjectChange={setProject}
             onContinue={() => {
               setOnboarding(false);
               setScreen("project-view");
@@ -88,15 +160,18 @@ export default function App() {
           />
         );
       case "create-task":
-        return <TaskCreate members={members} onCreate={handleCreateTask} />;
+        return (
+          <TaskCreate
+            projectId={project.id}
+            members={project.members}
+            onCreated={() => setScreen("project-view")}
+          />
+        );
       case "project-view":
       default:
         return (
           <ProjectView
             project={project}
-            members={members}
-            tasks={tasks}
-            onAdvanceTask={handleAdvanceTask}
             onAddMembers={() => goTo("add-members")}
             onCreateTask={() => goTo("create-task")}
           />
@@ -105,7 +180,14 @@ export default function App() {
   };
 
   return (
-    <AppShell active={screen} projectName={project.name} onNavigate={goTo} onLogout={handleLogout}>
+    <AppShell
+      active={screen}
+      projectName={project.name}
+      userName={currentUser?.name ?? "Convidado"}
+      userSubtitle={currentUser?.institution ?? ""}
+      onNavigate={goTo}
+      onLogout={handleLogout}
+    >
       {internalScreen()}
     </AppShell>
   );
