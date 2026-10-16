@@ -1,7 +1,32 @@
-# TCC+ — Front-end + Backend (auth, projetos, membros e tarefas)
+# TaskManagerTCC - (TCC+)
 
-Protótipo de front-end (React) para o app TCC+ (gestão de projetos de TCC em grupo),
-agora com um backend real para cadastro, login e sessão.
+### 👤 Integrantes do Grupo:
+- André Alves Toledo Silva (DEV)
+- Arthur Carvalho Rotkis (SM)
+- Cauê Iwamoto Meira (DEV)
+- Hanna de Oliveira Melo (PO)
+- Sérgio de Siqueira Santos (DEV)
+
+### 📚 Descrição do Projeto:
+Aplicativo Android desenvolvido para auxiliar grupos de estudantes no planejamento, organização e acompanhamento de projetos de TCC. A plataforma permite gerenciar tarefas individuais e compartilhadas, acompanhar prazos e progresso, organizar atividades em calendário e receber notificações, centralizando o desenvolvimento do projeto em um único ambiente.
+
+### [🔗 Link da página Trello](https://trello.com/b/0Uqu3Hnr/product-backlog-taskmanagertcc-tcc)
+
+## Definition of Done (DoD)
+### Em termos de código:
+- Não devem haver erros de execução ou avisos
+- A tarefa foi testada pelo desenvolvedor que a programou
+- A tarefa foi revisada pelo Scrum Master
+### Em termos de funcionalidade:
+- Todos os critérios de aceite foram atendidos
+- A funcionalidade não quebra outras funcionalidades
+- Não há bugs conhecidos
+
+## Evidência do Inicio da Sprint 1 (5/09/2026)
+<img width="1772" height="701" alt="image" src="https://github.com/user-attachments/assets/82ad583d-b9ff-4c98-a187-03adbd2c760d" />
+
+## Evidência após uma semana de desenvolvimento do Projeto (12/09/2026)
+<img width="770" height="717" alt="image" src="https://github.com/user-attachments/assets/884feedc-fc40-4fa4-8a02-b06a22023832" />
 
 ## Estrutura
 
